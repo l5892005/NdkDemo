@@ -30,14 +30,14 @@ public class VideoChannel implements Camera.PreviewCallback, CameraHelper.OnChan
         Log.i(TAG, "获取到一帧   onPreviewFrame: ");
         // 摄像头打开了。会一直调用，所以需要标志位控制
         // data数据就是一帧的数据，格式是nv21
-      /*  if (isLiving) {
+        if (isLiving) {
             livePusher.native_pushVideo(data);
-        }*/
+        }
     }
 
     @Override
     public void onChanged(int w, int h) {
-       // livePusher.native_setVideoEncInfo(w, h, mFps, mBitrate);
+        livePusher.native_setVideoEncInfo(w, h, mFps, mBitrate);
     }
 
     public void switchCamera() {

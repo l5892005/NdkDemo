@@ -35,9 +35,9 @@ public class AudioChannel {
             channelConfig = AudioFormat.CHANNEL_IN_MONO;
         }
 
-        mLivePusher.native_setAudioEncInfo(44100, channels);
+      //  mLivePusher.native_setAudioEncInfo(44100, channels);
         //16 位 2个字节
-        inputSamples = mLivePusher.getInputSamples() * 2;
+     //   inputSamples = mLivePusher.getInputSamples() * 2;
 //        minBufferSize
         minBufferSize = AudioRecord.getMinBufferSize(44100,
                 channelConfig, AudioFormat.ENCODING_PCM_16BIT) * 2;
@@ -49,7 +49,7 @@ public class AudioChannel {
 
     public void startLive() {
         isLiving = true;
-        executor.submit(new AudioTask());
+       // executor.submit(new AudioTask());
     }
 
     public void setChannels(int channels) {
@@ -59,7 +59,7 @@ public class AudioChannel {
     public void release() {
         audioRecord.release();
     }
-
+/*
     class AudioTask implements Runnable {
 
         @Override
@@ -70,9 +70,9 @@ public class AudioChannel {
             while (isLiving) {
                 // 麦克风读pcm数据，需要单独开线程
                 int len = audioRecord.read(bytes, 0, bytes.length);
-                mLivePusher.native_pushAudio(bytes);
+               // mLivePusher.native_pushAudio(bytes);
             }
         }
-    }
+    }*/
 
 }
