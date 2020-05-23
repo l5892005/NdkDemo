@@ -9,7 +9,7 @@ add_library( # Sets the name of the library.
         VideoChannel.cpp)
 include_directories(include)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -L${CMAKE_SOURCE_DIR}/lib/${ANDROID_ABI}" )
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -L${CMAKE_SOURCE_DIR}/lib/armeabi-v7a" )
 find_library( # Sets the name of the path variable.
         log-lib
 

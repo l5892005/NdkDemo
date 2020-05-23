@@ -10,21 +10,24 @@
     <Button
         android:layout_width="match_parent"
         android:onClick="switchCamera"
-        android:text="转换摄像头"
-        android:layout_height="wrap_content"/>
+        android:layout_weight="1"
+        android:text="点击此处看看有什么"
+        android:layout_height="0dp"/>
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="startLive"
+        android:visibility="gone"
         android:text="推流"/>
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="stopLive"
+        android:visibility="gone"
         android:text="停止推流"/>
     <SurfaceView
         android:id="@+id/sample_text"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0.1dp"
       />
 </LinearLayout>
