@@ -11,68 +11,60 @@ import com.anlu.demondk.LivePusher;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor;
 
 
 public class AudioChannel {
     private LivePusher mLivePusher;
     private AudioRecord audioRecord;
-    private int channels = 2;
-    private int channelConfig;
-
-    private int inputSamples;
+    private int channels =2;
+    private final int channelConfig;
     int minBufferSize;
-    private ExecutorService executor;
-    private boolean isLiving;
+    private  int inputSamples;
+    private boolean isLive;
+    private final ExecutorService executor;
 
     public AudioChannel(LivePusher livePusher) {
-        mLivePusher = livePusher;
+        this.mLivePusher=livePusher;
         executor = Executors.newSingleThreadExecutor();
-        if (channels == 2) {
-            // 双通道
+
+        if (channels==2){
             channelConfig = AudioFormat.CHANNEL_IN_STEREO;
-        } else {
-            // 单通道
+        }else{
             channelConfig = AudioFormat.CHANNEL_IN_MONO;
         }
-
-      //  mLivePusher.native_setAudioEncInfo(44100, channels);
-        //16 位 2个字节
-     //   inputSamples = mLivePusher.getInputSamples() * 2;
-//        minBufferSize
-        minBufferSize = AudioRecord.getMinBufferSize(44100,
-                channelConfig, AudioFormat.ENCODING_PCM_16BIT) * 2;
-        audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, 44100, channelConfig,
-                AudioFormat.ENCODING_PCM_16BIT, minBufferSize < inputSamples ? inputSamples : minBufferSize
-        );
-
+        mLivePusher.native_setAudioEncInfo(44100,channels);
+        //
+        inputSamples =mLivePusher.getInputSamples()*2;
+        //两个字节要乘以2， 参数一来源，听筒有上下两个，采样率，采样通道16位，
+        minBufferSize = AudioRecord.getMinBufferSize(44100, channelConfig, AudioFormat.ENCODING_PCM_16BIT)*2;
+        audioRecord=new AudioRecord(MediaRecorder.AudioSource.MIC,
+                44100,channelConfig,
+                AudioFormat.ENCODING_PCM_16BIT
+                ,minBufferSize<inputSamples?inputSamples:minBufferSize);
     }
 
-    public void startLive() {
-        isLiving = true;
-       // executor.submit(new AudioTask());
+    public void startLive(){
+        isLive=true;
+        executor.submit(new AudioTeask());
     }
 
-    public void setChannels(int channels) {
-        this.channels = channels;
+    public void setChannels(int channels){
+        this.channels=channels;
     }
 
-    public void release() {
-        audioRecord.release();
-    }
-/*
-    class AudioTask implements Runnable {
-
+    class  AudioTeask implements  Runnable{
         @Override
         public void run() {
             audioRecord.startRecording();
-//    pcm  音频原始数据
-            byte[] bytes = new byte[inputSamples];
-            while (isLiving) {
-                // 麦克风读pcm数据，需要单独开线程
-                int len = audioRecord.read(bytes, 0, bytes.length);
-               // mLivePusher.native_pushAudio(bytes);
+            //音频的原始数据 pcm
+            byte[] bytes=new byte[inputSamples];
+            while (isLive){
+                audioRecord.read(bytes,0,bytes.length);
+                mLivePusher.native_pushAudio(bytes);
             }
         }
-    }*/
+    }
+
 
 }

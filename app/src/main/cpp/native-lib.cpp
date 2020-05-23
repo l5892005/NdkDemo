@@ -4,9 +4,11 @@
 #include "x264.h"
 #include "librtmp/rtmp.h"
 #include "VideoChannel.h"
+#include "AudioChannel.h"
 #include "macro.h"
 #include "safe_queue.h"
-
+VideoChannel *videoChannel;
+AudioChannel *audioChannel;
 int isStart = 0;
 int readyPushing = 0;
 pthread_t pid;
@@ -14,9 +16,16 @@ SafeQueue<RTMPPacket *> packets;
 //同步音视频的关键，
 uint32_t start_time;
 
+void callback(RTMPPacket *packet){
+    if (packet){
+        packet->m_nTimeStamp =RTMP_GetTime()-start_time;
+        //加入队列
+        packets.put(packet);
+    }
+}
 void releasePackets(RTMPPacket *&packet) {
     if (packet) {
-        RTMP_Free(*packet);
+        RTMPPacket_Free(packet);
         delete packet;
         packet = 0;
     }
@@ -44,15 +53,16 @@ void *start(void *args) {
         return NULL;
     }
     ret = RTMP_ConnectStream(rtmp, 0);
-    if (ret) {
+    if (!ret) {
         LOGE("连接流:%s", url);
         return NULL;
     }
     start_time = RTMP_GetTime();
-    int readyPushing = 1;
     //准备开始推流
     readyPushing = 1;
+    packets.setWork(1);
     RTMPPacket *packet = 0;
+    callback(audioChannel->getAudioTag());
     while (readyPushing) {
         packets.get(packet);
         LOGE("取出一帧数据");
@@ -76,6 +86,7 @@ void *start(void *args) {
         RTMP_Free(rtmp);
     }
     delete (url);
+    return 0;
 }
 
 
@@ -90,11 +101,14 @@ Java_com_anlu_demondk_MainActivity_stringFromJNI(
     std::string hello = "Hello from C++";
     return env->NewStringUTF(hello.c_str());
 }
-VideoChannel *videoChannel;
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_anlu_demondk_LivePusher_native_1init(JNIEnv *env, jobject thiz) {
-    videoChannel = new VideoChannel();
+    videoChannel = new VideoChannel;
+    videoChannel->setVideoCallback(callback);
+    audioChannel = new AudioChannel;
+    audioChannel->setAudioCallback(callback);
 
 
 }extern "C"
@@ -102,6 +116,7 @@ JNIEXPORT void JNICALL
 Java_com_anlu_demondk_LivePusher_native_1setVideoEncInfo(JNIEnv *env, jobject thiz, jint width,
                                                          jint height, jint fps, jint bitrate) {
     if (!videoChannel) {
+
         return;
     }
     videoChannel->setVideoEncInfo(width, height, fps, bitrate);
@@ -133,4 +148,32 @@ Java_com_anlu_demondk_LivePusher_native_1pushVideo(JNIEnv *env, jobject thiz, jb
     videoChannel->encodeData(date);
 
     env->ReleaseByteArrayElements(data_,date,0);
+}extern "C"
+JNIEXPORT void JNICALL
+Java_com_anlu_demondk_LivePusher_native_1pushAudio(JNIEnv *env, jobject thiz, jbyteArray bytes_) {
+
+    jbyte *data = env->GetByteArrayElements(bytes_,NULL);
+
+    if (!audioChannel||!readyPushing){
+        return;
+    }
+    audioChannel->encodeData(data);
+    env->ReleaseByteArrayElements(bytes_,data,0);
+}extern "C"
+JNIEXPORT void JNICALL
+Java_com_anlu_demondk_LivePusher_native_1setAudioEncInfo(JNIEnv *env, jobject thiz, jint sampleRateInHz,
+                                                         jint channels) {
+    if (audioChannel){
+        audioChannel->setAudioEncInfo(sampleRateInHz,channels);
+    }
+
+
+}extern "C"
+JNIEXPORT jint JNICALL
+Java_com_anlu_demondk_LivePusher_getInputSamples(JNIEnv *env, jobject thiz) {
+        if (audioChannel){
+            return audioChannel->getInputSamples();
+        }
+    return -1;
+
 }
